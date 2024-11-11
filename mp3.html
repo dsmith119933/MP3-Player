@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yummpy Media Player</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #000000, #0000ff);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            transition: background 1s ease;
+            color: #fff;
+        }
+        #player {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        #cover {
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 20px;
+            background-size: cover;
+            border-radius: 10px;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        #upload-button, #airplay-button {
+            margin: 10px 5px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+        #upload-button:hover, #airplay-button:hover {
+            background-color: #0056b3;
+        }
+        #drag-and-drop {
+            width: 100%;
+            padding: 20px;
+            border: 2px dashed #007bff;
+            border-radius: 5px;
+            background-color: #f8f8f8;
+            cursor: pointer;
+            margin-top: 10px;
+            color: #333;
+        }
+        #instructions {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 10px;
+        }
+        #device-info {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 10px;
+        }
+        #volume-slider {
+            width: 100%;
+            max-width: 300px;
+            margin: 10px auto;
+        }
+    </style>
+</head>
+<body>
+    <form id="upload-form">
+        <input type="file" id="file-input" accept="audio/*">
+        <input type="text" id="title-input" placeholder="Title">
+        <input type="text" id="artist-input" placeholder="Artist">
+        <input type="text" id="album-input" placeholder="Album">
+        <input type="text" id="cover-input" placeholder="Cover Image URL">
+        <button type="submit">Upload</button>
+    </form>
+    
+    <div id="file-list"></div>
+    
+    <div id="player">
+        <button id="upload-button">Choose File</button>
+        <div id="drag-and-drop">Drag and drop files here or click to choose</div>
+        <div id="cover" style="background-image: url('default-album-cover.jpg');"></div>
+        <h2 id="title">MP3 File</h2>
+        <h3 id="artist">Yummpy Media Player</h3>
+        <p id="album">Album Name</p>
+        <audio id="audio" controls></audio>
+        <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5">
+        <p id="device-info"></p>
+        <p id="battery-info"></p>
+        <button id="airplay-button">Enable AirPlay</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const uploadButton = document.getElementById('upload-button');
+        const dragAndDrop = document.getElementById('drag-and-drop');
+        const audio = document.getElementById('audio');
+        const title = document.getElementById('title');
+        const artist = document.getElementById('artist');
+        const album = document.getElementById('album');
+        const cover = document.getElementById('cover');
+        const body = document.body;
+        const deviceInfo = document.getElementById('device-info');
+        const airplayButton = document.getElementById('airplay-button');
+        const volumeSlider = document.getElementById('volume-slider');
+        const batteryInfo = document.getElementById('battery-info');
+
+        // Display device info
+        deviceInfo.textContent = `Playing from ${navigator.userAgent}`;
+
+        // Handle file uploads
+        uploadButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        dragAndDrop.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        dragAndDrop.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            dragAndDrop.style.backgroundColor = '#e0e0e0';
+        });
+
+        dragAndDrop.addEventListener('dragleave', () => {
+            dragAndDrop.style.backgroundColor = '#f8f8f8';
+        });
+
+        dragAndDrop.addEventListener('drop', (event) => {
+            event.preventDefault();
+            dragAndDrop.style.backgroundColor = '#f8f8f8';
+            const file = event.dataTransfer.files[0];
+            handleFile(file);
+        });
+
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            handleFile(file);
+        });
+
+        function handleFile(file) {
+            if (file) {
+                const url = URL.createObjectURL(file);
+                audio.src = url;
+
+                // Read metadata (requires jsmediatags library)
+                jsmediatags.read(file, {
+                    onSuccess: function(tag) {
+                        title.textContent = tag.tags.title || 'MP3 File';
+                        artist.textContent = tag.tags.artist || 'Yummpy Media Player';
+                        album.textContent = tag.tags.album || 'Unknown Album';
+
+                        if (tag.tags.picture) {
+                            const base64String = arrayBufferToBase64(tag.tags.picture.data);
+                            const coverImage = `url(data:${tag.tags.picture.format};base64,${base64String})`;
+                            cover.style.backgroundImage = coverImage;
+
+                            // Set background when playing
+                            audio.addEventListener('play', () => {
+                                body.style.backgroundImage = coverImage;
+                                body.style.backgroundSize = 'cover';
+                            });
+
+                            audio.addEventListener('pause', () => {
+                                body.style.background = 'linear-gradient(to bottom, #000000, #0000ff)';
+                            });
+
+                        } else {
+                            cover.style.backgroundImage = 'url(default-album-cover.jpg)';
+                        }
+                    },
+                    onError: function(error) {
+                        console.log(error);
+                    }
+                });
+            }
+        }
+
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            const len = bytes.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return window.btoa(binary);
+        }
+
+        // Volume control
+        volumeSlider.addEventListener('input', () => {
+            audio.volume = volumeSlider.value;
+        });
+
+        // Battery info
+        if (navigator.getBattery) {
+            navigator.getBattery().then(battery => {
+                function updateBatteryInfo() {
+                    batteryInfo.textContent = `Battery: ${Math.round(battery.level * 100)}% ${battery.charging ? '(Charging)' : ''}`;
+                }
+                updateBatteryInfo();
+                battery.addEventListener('levelchange', updateBatteryInfo);
+                battery.addEventListener('chargingchange', updateBatteryInfo);
+            });
+        }
+
+        // Enable AirPlay
+        airplayButton.addEventListener('click', () => {
+            if (typeof audio.webkitShowPlaybackTargetPicker === 'function') {
+                audio.webkitShowPlaybackTargetPicker();
+            } else {
+                alert('AirPlay is not supported on this device.');
+            }
+        });
+
+        // Media Session API
+        audio.addEventListener('play', () => {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: title.textContent,
+                artist: artist.textContent,
+                album: album.textContent,
+                artwork: [
+                    { src: cover.style.backgroundImage.slice(5, -2), sizes: '300x300', type: 'image/jpeg' }
+                ]
+            });
+
+            navigator.mediaSession.setActionHandler('play', () => { audio.play(); });
+            navigator.mediaSession.setActionHandler('pause', () => { audio.pause(); });
+            navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+                audio.currentTime = Math.max(audio.currentTime - (details.seekOffset || 10), 0);
+            });
+            navigator.mediaSession.setActionHandler('seekforward', (details) => {
+                audio.currentTime = Math.min(audio.currentTime + (details.seekOffset || 10), audio.duration);
+            });
+        });
+
