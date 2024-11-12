@@ -14,7 +14,7 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
-            transition: background 1s ease;
+            transition: background 3s ease;
             color: #fff;
         }
         #player {
@@ -160,7 +160,7 @@
                     onSuccess: function(tag) {
                         title.textContent = tag.tags.title || 'MP3 File';
                         artist.textContent = tag.tags.artist || 'Yummpy Media Player';
-                        album.textContent = tag.tags.album || 'Unknown Album';
+                        album.textContent = tag.tags.album || 'proud sponsor of www.zombo.com';
 
                         if (tag.tags.picture) {
                             const base64String = arrayBufferToBase64(tag.tags.picture.data);
